@@ -6,7 +6,7 @@ It leverages the Nebius Token Factory API (or OpenAI API) to generate the summar
 
 ## Prerequisites
 
-- Python 3.10+
+- Python 3.10 to 3.14
 - An API Key from Nebius Token Factory (or OpenAI).
 
 ## Step-by-Step Setup

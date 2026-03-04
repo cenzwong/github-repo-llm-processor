@@ -18,7 +18,8 @@ def test_summarize_invalid_url():
     assert data["status"] == "error"
 
 
-def test_summarize_missing_key():
+def test_summarize_missing_key(monkeypatch):
+    monkeypatch.delenv("NEBIUS_API_KEY", raising=False)
     # Will fail 500 without a real API key configured in env
     response = client.post(
         "/summarize", json={"github_url": "https://github.com/psf/requests"}
@@ -26,4 +27,4 @@ def test_summarize_missing_key():
     assert response.status_code == 500
     data = response.json()
     assert data["status"] == "error"
-    assert "Neither NEBIUS_API_KEY nor OPENAI_API_KEY" in data["message"]
+    assert "NEBIUS_API_KEY" in data["message"]

@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 
 class LLMClient:
     def __init__(self):
-        nebius_key = os.environ["NEBIUS_API_KEY"]
+        nebius_key = os.environ.get("NEBIUS_API_KEY")
+        if not nebius_key:
+            raise ValueError("NEBIUS_API_KEY environment variable is not set.")
         self.client = AsyncOpenAI(
             api_key=nebius_key, base_url="https://api.studio.nebius.ai/v1/"
         )
