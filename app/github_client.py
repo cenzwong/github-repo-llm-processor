@@ -6,24 +6,81 @@ from typing import List, Dict, Tuple, Optional
 
 # Constants for filtering
 EXCLUDED_DIRS = {
-    "node_modules", "venv", ".venv", "env", ".env", "dist", "build", "out",
-    "__pycache__", ".git", ".github", ".vscode", ".idea", "vendor", "target", "bin", "obj"
+    "node_modules",
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    "dist",
+    "build",
+    "out",
+    "__pycache__",
+    ".git",
+    ".github",
+    ".vscode",
+    ".idea",
+    "vendor",
+    "target",
+    "bin",
+    "obj",
 }
 
 EXCLUDED_EXTS = {
-    ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp",
-    ".pdf", ".zip", ".tar", ".gz", ".bz2", ".xz", ".rar",
-    ".exe", ".dll", ".so", ".dylib", ".bin", ".class", ".jar",
-    ".mp3", ".mp4", ".wav", ".avi", ".mkv", ".mov",
-    ".lock", ".pyc", ".pyo", ".pyd", ".log"
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".ico",
+    ".svg",
+    ".webp",
+    ".pdf",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".bz2",
+    ".xz",
+    ".rar",
+    ".exe",
+    ".dll",
+    ".so",
+    ".dylib",
+    ".bin",
+    ".class",
+    ".jar",
+    ".mp3",
+    ".mp4",
+    ".wav",
+    ".avi",
+    ".mkv",
+    ".mov",
+    ".lock",
+    ".pyc",
+    ".pyo",
+    ".pyd",
+    ".log",
 }
 
 HIGH_PRIORITY_FILES = {
-    "readme.md", "readme.rst", "readme.txt", "readme",
-    "package.json", "requirements.txt", "pyproject.toml",
-    "pom.xml", "build.gradle", "go.mod", "cargo.toml",
-    "docker-compose.yml", "dockerfile", "makefile",
-    "main.py", "app.py", "index.js", "server.js", "main.go", "main.rs"
+    "readme.md",
+    "readme.rst",
+    "readme.txt",
+    "readme",
+    "package.json",
+    "requirements.txt",
+    "pyproject.toml",
+    "pom.xml",
+    "build.gradle",
+    "go.mod",
+    "cargo.toml",
+    "docker-compose.yml",
+    "dockerfile",
+    "makefile",
+    "main.py",
+    "app.py",
+    "index.js",
+    "server.js",
+    "main.go",
+    "main.rs",
 }
 
 
@@ -34,7 +91,7 @@ class GitHubClient:
 
         self.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "Repo-Summarizer-API"
+            "User-Agent": "Repo-Summarizer-API",
         }
 
         token = os.getenv("GITHUB_TOKEN")
@@ -48,10 +105,14 @@ class GitHubClient:
         # Extract owner and repo from URL
         match = re.search(r"github\.com/([^/]+)/([^/]+)", url)
         if not match:
-            raise ValueError("Invalid GitHub URL format. Expected: https://github.com/owner/repo")
+            raise ValueError(
+                "Invalid GitHub URL format. Expected: https://github.com/owner/repo"
+            )
         return match.group(1), match.group(2)
 
-    async def get_repo_info(self, client: httpx.AsyncClient, owner: str, repo: str) -> dict:
+    async def get_repo_info(
+        self, client: httpx.AsyncClient, owner: str, repo: str
+    ) -> dict:
         """Fetches repository info to get the default branch."""
         url = f"{self.github_api_base}/repos/{owner}/{repo}"
         response = await client.get(url, headers=self.headers)
@@ -60,7 +121,9 @@ class GitHubClient:
         response.raise_for_status()
         return response.json()
 
-    async def get_repo_tree(self, client: httpx.AsyncClient, owner: str, repo: str, branch: str) -> List[dict]:
+    async def get_repo_tree(
+        self, client: httpx.AsyncClient, owner: str, repo: str, branch: str
+    ) -> List[dict]:
         """Fetches the full git tree of the repository recursively."""
         url = f"{self.github_api_base}/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
         response = await client.get(url, headers=self.headers)
@@ -81,7 +144,9 @@ class GitHubClient:
 
             # Check for excluded directories in the path
             path_parts = path.split("/")
-            if any(part in EXCLUDED_DIRS or part.startswith(".") for part in path_parts):
+            if any(
+                part in EXCLUDED_DIRS or part.startswith(".") for part in path_parts
+            ):
                 continue
 
             # For files, check extensions
@@ -94,7 +159,9 @@ class GitHubClient:
 
         return filtered_tree
 
-    def select_high_priority_files(self, tree: List[dict], limit: int = 10) -> List[str]:
+    def select_high_priority_files(
+        self, tree: List[dict], limit: int = 10
+    ) -> List[str]:
         """Selects the most relevant files to fetch content for."""
         files = []
 
@@ -119,7 +186,14 @@ class GitHubClient:
 
         return files[:limit]
 
-    async def fetch_file_content(self, client: httpx.AsyncClient, owner: str, repo: str, branch: str, file_path: str) -> Tuple[str, Optional[str]]:
+    async def fetch_file_content(
+        self,
+        client: httpx.AsyncClient,
+        owner: str,
+        repo: str,
+        branch: str,
+        file_path: str,
+    ) -> Tuple[str, Optional[str]]:
         """Fetches the raw content of a specific file."""
         url = f"{self.raw_content_base}/{owner}/{repo}/{branch}/{file_path}"
         try:
@@ -131,7 +205,9 @@ class GitHubClient:
         except Exception as e:
             return file_path, f"<Error fetching file: {str(e)}>"
 
-    async def fetch_repo_context(self, github_url: str) -> Tuple[List[dict], Dict[str, str]]:
+    async def fetch_repo_context(
+        self, github_url: str
+    ) -> Tuple[List[dict], Dict[str, str]]:
         """Orchestrates fetching the repo tree and key file contents."""
         owner, repo = self.parse_github_url(github_url)
 
@@ -156,6 +232,8 @@ class GitHubClient:
             ]
             results = await asyncio.gather(*tasks)
 
-            file_contents = {path: content for path, content in results if content is not None}
+            file_contents = {
+                path: content for path, content in results if content is not None
+            }
 
             return filtered_tree, file_contents

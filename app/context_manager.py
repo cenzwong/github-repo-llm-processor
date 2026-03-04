@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict
 
+
 class ContextManager:
     def __init__(self, max_tree_depth: int = 3):
         self.max_tree_depth = max_tree_depth
@@ -18,7 +19,7 @@ class ContextManager:
                 if part not in current:
                     current[part] = {}
                 current = current[part]
-            current[parts[-1]] = None # None represents a file
+            current[parts[-1]] = None  # None represents a file
 
         return self._render_tree(root, depth=0)
 
@@ -29,7 +30,7 @@ class ContextManager:
         output = ""
         keys = sorted(node.keys())
         for i, key in enumerate(keys):
-            is_last = (i == len(keys) - 1)
+            is_last = i == len(keys) - 1
             prefix = "└── " if is_last else "├── "
 
             if node[key] is None:
@@ -59,7 +60,9 @@ class ContextManager:
         tree_section = f"--- REPOSITORY TREE ---\n{ascii_tree}\n\n"
         # Truncate tree if absolutely massive
         if len(tree_section) > 5000:
-             tree_section = tree_section[:5000] + "\n... (Tree truncated due to length)\n"
+            tree_section = (
+                tree_section[:5000] + "\n... (Tree truncated due to length)\n"
+            )
         context_parts.append(tree_section)
 
         # 2. Add File Contents based on categories
@@ -71,14 +74,24 @@ class ContextManager:
             # Determine budget
             if "readme" in filename:
                 budget = BUDGET_README
-            elif filename in {"package.json", "requirements.txt", "pyproject.toml", "pom.xml", "go.mod", "docker-compose.yml"}:
+            elif filename in {
+                "package.json",
+                "requirements.txt",
+                "pyproject.toml",
+                "pom.xml",
+                "go.mod",
+                "docker-compose.yml",
+            }:
                 budget = BUDGET_DEPENDENCIES
             else:
                 budget = BUDGET_CODE
 
             # Truncate if necessary
             if len(content) > budget:
-                content = content[:budget] + "\n\n... (File truncated due to length constraints) ..."
+                content = (
+                    content[:budget]
+                    + "\n\n... (File truncated due to length constraints) ..."
+                )
 
             context_parts.append(f"File: {file_path}\n```\n{content}\n```\n\n")
 

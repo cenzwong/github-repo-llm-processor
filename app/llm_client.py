@@ -6,6 +6,7 @@ from app.schemas import SummarizeResponse
 
 logger = logging.getLogger(__name__)
 
+
 class LLMClient:
     def __init__(self):
         # Prefer Nebius API key, fallback to OpenAI API key
@@ -14,18 +15,17 @@ class LLMClient:
 
         if nebius_key:
             self.client = AsyncOpenAI(
-                api_key=nebius_key,
-                base_url="https://api.studio.nebius.ai/v1/"
+                api_key=nebius_key, base_url="https://api.studio.nebius.ai/v1/"
             )
             # You can choose a different model available on Nebius
-            self.model = os.getenv("LLM_MODEL", "meta-llama/Meta-Llama-3-8B-Instruct")
+            self.model = os.getenv("LLM_MODEL", "openai/gpt-oss-120b")
         elif openai_key:
-            self.client = AsyncOpenAI(
-                api_key=openai_key
-            )
+            self.client = AsyncOpenAI(api_key=openai_key)
             self.model = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
         else:
-            raise ValueError("Neither NEBIUS_API_KEY nor OPENAI_API_KEY environment variable is set.")
+            raise ValueError(
+                "Neither NEBIUS_API_KEY nor OPENAI_API_KEY environment variable is set."
+            )
 
     async def generate_summary(self, context: str) -> SummarizeResponse:
         system_prompt = (
@@ -47,9 +47,16 @@ class LLMClient:
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": context}
+                    {"role": "user", "content": context},
                 ],
-                response_format={"type": "json_object"},
+                response_format={
+                    "type": "json_object",
+                    "json_schema": {
+                        "name": "summarize_response",
+                        "strict": True,
+                        "schema": SummarizeResponse.model_json_schema(),
+                    },
+                },
                 temperature=0.2,
                 max_tokens=1024,
             )
@@ -62,12 +69,14 @@ class LLMClient:
             return SummarizeResponse(
                 summary=data.get("summary", "Summary not available."),
                 technologies=data.get("technologies", []),
-                structure=data.get("structure", "Structure not available.")
+                structure=data.get("structure", "Structure not available."),
             )
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse LLM response as JSON: {e}")
             raise Exception("LLM returned malformed JSON.")
+            # TODO: I would like to try fixing the JSON response by using a different model
+
         except Exception as e:
             logger.error(f"LLM API Error: {str(e)}")
             raise Exception(f"Failed to communicate with LLM: {str(e)}")
