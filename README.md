@@ -29,12 +29,10 @@ It leverages the Nebius Token Factory API (or OpenAI API) to generate the summar
    ```
 
 4. **Set Environment Variables**
-   Set your LLM provider API key. The application prioritizes `NEBIUS_API_KEY`. If it's not found, it falls back to `OPENAI_API_KEY`.
+   Set your LLM provider API key. The application requires `NEBIUS_API_KEY`.
 
    ```bash
    export NEBIUS_API_KEY="your-nebius-api-key"
-   # OR
-   # export OPENAI_API_KEY="your-openai-api-key"
    ```
 
    *(Optional) If you plan to heavily test the API locally and encounter GitHub API rate limits, you can export a `GITHUB_TOKEN`.*
@@ -57,7 +55,7 @@ It leverages the Nebius Token Factory API (or OpenAI API) to generate the summar
 
 ### LLM Model Choice
 
-The application defaults to `meta-llama/Meta-Llama-3-8B-Instruct` when using the Nebius platform (or `gpt-3.5-turbo` as a fallback). These models were chosen because they are incredibly fast, cost-effective, and highly capable of structured JSON output generation, which is perfect for code summarization tasks where speed and strict output formatting are necessary.
+The application defaults to `MiniMax-M2.1` because its agentic logic and interleaved-thinking capabilities are highly effective for cross-referencing multiple configuration files before outputting the final summary.
 
 ### Handling Repository Contents (Context Management)
 

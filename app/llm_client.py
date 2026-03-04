@@ -9,30 +9,19 @@ logger = logging.getLogger(__name__)
 
 class LLMClient:
     def __init__(self):
-        # Prefer Nebius API key, fallback to OpenAI API key
-        nebius_key = os.getenv("NEBIUS_API_KEY")
-        openai_key = os.getenv("OPENAI_API_KEY")
-
-        if nebius_key:
-            self.client = AsyncOpenAI(
-                api_key=nebius_key, base_url="https://api.studio.nebius.ai/v1/"
-            )
-            # You can choose a different model available on Nebius
-            self.model = os.getenv("LLM_MODEL", "openai/gpt-oss-120b")
-        elif openai_key:
-            self.client = AsyncOpenAI(api_key=openai_key)
-            self.model = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
-        else:
-            raise ValueError(
-                "Neither NEBIUS_API_KEY nor OPENAI_API_KEY environment variable is set."
-            )
+        nebius_key = os.environ["NEBIUS_API_KEY"]
+        self.client = AsyncOpenAI(
+            api_key=nebius_key, base_url="https://api.studio.nebius.ai/v1/"
+        )
+        # self.model = os.getenv("LLM_MODEL", "openai/gpt-oss-120b")
+        self.model = os.getenv("LLM_MODEL", "MiniMaxAI/MiniMax-M2.1")
 
     async def generate_summary(self, context: str) -> SummarizeResponse:
         system_prompt = (
             "You are a senior software architect analyzing a GitHub repository.\n"
             "Based on the provided repository tree, documentation, and configuration files, extract the following:\n"
             "1. 'summary': A brief, human-readable description of what the project does.\n"
-            "2. 'technologies': A list of the main technologies, languages, and frameworks used.\n"
+            "2. 'technologies': A list of the main technologies, languages, and frameworks used. No need to include the test frameworks.\n"
             "3. 'structure': A brief description of the project's directory structure and architecture.\n\n"
             "Output your response strictly as a JSON object matching this schema:\n"
             "{\n"
@@ -65,6 +54,7 @@ class LLMClient:
 
             # Parse JSON to validate
             data = json.loads(result_content)
+            print(data)
 
             return SummarizeResponse(
                 summary=data.get("summary", "Summary not available."),
@@ -75,7 +65,7 @@ class LLMClient:
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse LLM response as JSON: {e}")
             raise Exception("LLM returned malformed JSON.")
-            # TODO: I would like to try fixing the JSON response by using a different model
+            # TODO: I would like to try fixing the JSON response by passing it back to the LLM and ask it to fix the JSON response.
 
         except Exception as e:
             logger.error(f"LLM API Error: {str(e)}")
